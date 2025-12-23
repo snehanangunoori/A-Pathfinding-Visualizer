@@ -1,43 +1,59 @@
 import heapq
+from itertools import count
+
+
+def get_neighbors(node, grid):
+    neighbors = []
+    directions = [
+        (-1, 0),  # up
+        (1, 0),   # down
+        (0, -1),  # left
+        (0, 1)    # right
+    ]
+
+    rows = len(grid)
+    cols = len(grid[0])
+
+    for dr, dc in directions:
+        r = node.row + dr
+        c = node.col + dc
+
+        if 0 <= r < rows and 0 <= c < cols:
+            neighbors.append(grid[r][c])
+
+    return neighbors
+
 
 def astar(start, goal, grid, heuristic):
-    """
-    TODO:
-    Implement A* search
-
-    Returns:
-    - path: list of nodes from start to goal
-    - explored: set of visited nodes
-    """
-
+    
     open_set = []
-    heapq.heappush(open_set, (0, start))
+    counter = count() # for tie-breaking
+    heapq.heappush(open_set, (0, next(counter), start))
 
     g_score = {start: 0}
-    parent = {}
-    explored = set()
+    parent = {} # To reconstruct path
+    visited = set()
 
     while open_set:
-        _, current = heapq.heappop(open_set)
+        _, _, current = heapq.heappop(open_set)
 
         if current == goal:
-            return reconstruct_path(parent, current), explored
+            return reconstruct_path(parent, current), visited
 
-        explored.add(current)
+        visited.add(current)
+        
+        tentative_g = g_score[current] + 1  # Assuming uniform cost for each edge
 
         for neighbor in get_neighbors(current, grid):
-            if not neighbor.walkable or neighbor in explored:
+            if not neighbor.walkable or neighbor in visited:
                 continue
-
-            tentative_g = g_score[current] + 1
-
             if neighbor not in g_score or tentative_g < g_score[neighbor]:
                 parent[neighbor] = current
                 g_score[neighbor] = tentative_g
                 f = tentative_g + heuristic(neighbor, goal)
-                heapq.heappush(open_set, (f, neighbor))
+                heapq.heappush(open_set, (f, next(counter), neighbor))
 
-    return None, explored
+    return None, visited
 
 
 def reconstruct_path(parent, current):
